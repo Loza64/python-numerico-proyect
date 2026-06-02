@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Filtro de Fourier - Procesamiento de Audio</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      opacity: 0.9;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .upload-area {
+      border: 2px dashed #667eea;
+      border-radius: 10px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #f8f9ff;
+    }
+
+    .upload-area:hover {
+      background: #f0f2ff;
+      border-color: #764ba2;
+    }
+
+    .upload-area.drag-over {
+      background: #e8ebff;
+      border-color: #764ba2;
+    }
+
+    .upload-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+
+    .file-info {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f0f2ff;
+      border-radius: 10px;
+      display: none;
+    }
+
+    .file-info.show {
+      display: block;
+    }
+
+    .controls {
+      margin-top: 25px;
+      padding: 20px;
+      background: #f8f9ff;
+      border-radius: 10px;
+    }
+
+    .control-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      padding: 5px;
+    }
+
+    .freq-value {
+      display: inline-block;
+      margin-left: 10px;
+      padding: 5px 10px;
+      background: #667eea;
+      color: white;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .result {
+      margin-top: 25px;
+      padding: 20px;
+      background: #e8f5e9;
+      border-radius: 10px;
+      display: none;
+    }
+
+    .result.show {
+      display: block;
+    }
+
+    .download-btn {
+      background: #4caf50;
+      margin-top: 15px;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .loading.show {
+      display: block;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .error {
+      background: #ffebee;
+      color: #c62828;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 15px;
+      display: none;
+    }
+
+    .error.show {
+      display: block;
+    }
+
+    .metrics {
+      margin-top: 15px;
+      padding: 10px;
+      background: white;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎵 Filtro de Fourier</h1>
+      <p>Elimina ruidos agudos usando Transformada Rápida de Fourier</p>
+    </div>
+
+    <div class="content">
+      <div class="upload-area" id="uploadArea">
+        <div class="upload-icon">📁</div>
+        <p>Haz clic o arrastra un archivo WAV</p>
+        <small>Formatos soportados: .wav (máx 50MB)</small>
+        <input type="file" id="fileInput" accept=".wav" style="display: none;">
+      </div>
+
+      <div class="file-info" id="fileInfo">
+        <strong>📄 Archivo seleccionado:</strong> <span id="fileName"></span>
+        <br>
+        <small>Tamaño: <span id="fileSize"></span></small>
+      </div>
+
+      <div class="controls">
+        <div class="control-group">
+          <label>🔽 Frecuencia de corte (Hz):
+            <span class="freq-value" id="freqValue">4000</span>
+          </label>
+          <input type="range" id="cutoffFreq" min="500" max="20000" step="100" value="4000">
+          <small>Frecuencias por encima de este valor serán eliminadas</small>
+        </div>
+
+        <button id="processBtn">🎛️ Aplicar Filtro de Fourier</button>
+      </div>
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p style="margin-top: 10px;">Procesando audio con FFT...</p>
+      </div>
+
+      <div class="error" id="error"></div>
+
+      <div class="result" id="result">
+        <h3>✅ Audio procesado exitosamente</h3>
+        <div class="metrics" id="metrics"></div>
+        <button class="download-btn" id="downloadBtn">⬇️ Descargar Audio Filtrado</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentOutputFile = null;
+
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const processBtn = document.getElementById('processBtn');
+    const cutoffFreq = document.getElementById('cutoffFreq');
+    const freqValue = document.getElementById('freqValue');
+    const loading = document.getElementById('loading');
+    const result = document.getElementById('result');
+    const errorDiv = document.getElementById('error');
+    const metrics = document.getElementById('metrics');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    let selectedFile = null;
+
+    // Actualizar valor de frecuencia
+    cutoffFreq.addEventListener('input', () => {
+      freqValue.textContent = cutoffFreq.value;
+    });
+
+    // Click en área de upload
+    uploadArea.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    // Drag & drop
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('drag-over');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('drag-over');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('drag-over');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+
+    // Selección de archivo
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    function handleFile(file) {
+      if (!file.name.endsWith('.wav')) {
+        showError('Solo se permiten archivos .wav');
+        return;
+      }
+
+      if (file.size > 50 * 1024 * 1024) {
+        showError('El archivo no debe superar los 50MB');
+        return;
+      }
+
+      selectedFile = file;
+      fileName.textContent = file.name;
+      fileSize.textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+      fileInfo.classList.add('show');
+      result.classList.remove('show');
+      errorDiv.classList.remove('show');
+    }
+
+    async function procesarAudio() {
+      if (!selectedFile) {
+        showError('Por favor selecciona un archivo de audio');
+        return;
+      }
+
+      processBtn.disabled = true;
+      loading.classList.add('show');
+      result.classList.remove('show');
+      errorDiv.classList.remove('show');
+
+      const formData = new FormData();
+      formData.append('audio', selectedFile);
+      formData.append('cutoff_freq', cutoffFreq.value);
+
+      try {
+        const response = await fetch('/procesar', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          currentOutputFile = data.output_file.split('/').pop();
+
+          metrics.innerHTML = `
+                        <strong>📊 Métricas del procesamiento:</strong><br>
+                        • Frecuencia de muestreo: ${data.fs} Hz<br>
+                        • Duración: ${data.duration} segundos<br>
+                        • Frecuencia de corte: ${data.cutoff_freq} Hz<br>
+                        • Energía original: ${data.original_energy.toFixed(2)}<br>
+                        • Energía filtrada: ${data.filtered_energy.toFixed(2)}<br>
+                        • Reducción de energía: ${((1 - data.filtered_energy / data.original_energy) * 100).toFixed(1)}%
+                    `;
+
+          result.classList.add('show');
+        } else {
+          showError(data.error || 'Error al procesar el audio');
+        }
+      } catch (error) {
+        showError('Error de conexión: ' + error.message);
+      } finally {
+        processBtn.disabled = false;
+        loading.classList.remove('show');
+      }
+    }
+
+    function descargarAudio() {
+      if (currentOutputFile) {
+        window.location.href = `/descargar/${currentOutputFile}`;
+      }
+    }
+
+    function showError(message) {
+      errorDiv.textContent = message;
+      errorDiv.classList.add('show');
+      setTimeout(() => {
+        errorDiv.classList.remove('show');
+      }, 5000);
+    }
+
+    processBtn.addEventListener('click', procesarAudio);
+    downloadBtn.addEventListener('click', descargarAudio);
+  </script>
+</body>
+
+</html>
