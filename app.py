@@ -45,10 +45,11 @@ def procesar_audio():
         if len(data.shape) > 1:
             data = data[:, 0]
         
+        # Normalizar si es int16
+        is_int16 = (data.dtype == np.int16)
         data = data.astype(np.float32)
         
-        # Normalizar si es int16
-        if data.dtype == np.int16:
+        if is_int16:
             data = data / 32768.0
         
         N = len(data)
@@ -64,21 +65,23 @@ def procesar_audio():
         # 7. Transformada inversa
         data_filtered = np.real(ifft(X_filtered))
         
-        # 8. Normalizar
-        max_val = np.max(np.abs(data_filtered))
-        if max_val > 0:
-            data_filtered = data_filtered / max_val * 0.99
-        
-        # 9. Convertir a int16
-        data_output = (data_filtered * 32767).astype(np.int16)
-        
-        # 10. Guardar resultado
-        output_filename = f"processed/{uuid.uuid4()}.wav"
-        wavfile.write(output_filename, fs, data_output)
-        
-        # 11. Calcular métricas
+        # 8. Calcular métricas antes de normalizar el volumen del archivo de salida
         original_energy = np.sum(data**2)
         filtered_energy = np.sum(data_filtered**2)
+        
+        # 9. Normalizar para el archivo de salida (ajuste de volumen)
+        max_val = np.max(np.abs(data_filtered))
+        if max_val > 0:
+            data_filtered_out = data_filtered / max_val * 0.99
+        else:
+            data_filtered_out = data_filtered
+        
+        # 10. Convertir a int16
+        data_output = (data_filtered_out * 32767).astype(np.int16)
+        
+        # 11. Guardar resultado
+        output_filename = f"processed/{uuid.uuid4()}.wav"
+        wavfile.write(output_filename, fs, data_output)
         
         # 12. Limpiar archivo original
         os.remove(input_filename)
@@ -101,6 +104,6 @@ def descargar(filename):
     return send_file(f"processed/{filename}", as_attachment=True, download_name="audio_filtrado.wav")
 
 if __name__ == '__main__':
-    print("🚀 Servidor iniciado en http://localhost:5000")
-    print("📌 Subí un audio WAV y se aplicará filtro pasa bajas")
+    print("Servidor iniciado en http://localhost:5000")
+    print("Subi un audio WAV y se aplicara filtro pasa bajas")
     app.run(debug=True, port=5000)
