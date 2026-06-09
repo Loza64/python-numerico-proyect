@@ -1,4 +1,4 @@
-/processed/*.wav
+/processed/*
 /yupiter/.ipynb_checkpoints
 /yupiter/uploads/*
 venv/
