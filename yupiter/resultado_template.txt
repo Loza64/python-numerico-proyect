@@ -1,0 +1,62 @@
+<div style="
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(102,126,234,0.25);
+">
+    <div style="
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 18px 22px;
+        color: white;
+    ">
+        <div style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">🎵 Resultado del Procesamiento</div>
+        <div style="font-size: 11px; opacity: 0.85;">Filtro Pasa Bajas · FFT</div>
+    </div>
+
+    <div style="background: #f0f2ff; padding: 10px 22px; border-bottom: 1px solid #dde0f5;">
+        <div style="font-size: 10px; color: #888; margin-bottom: 2px;">ARCHIVO DE ENTRADA</div>
+        <div style="font-size: 12px; color: #444; font-family: monospace;">📂 {input}</div>
+        <div style="font-size: 10px; color: #888; margin-top: 6px; margin-bottom: 2px;">ARCHIVO DE SALIDA</div>
+        <div style="font-size: 12px; color: #444; font-family: monospace;">💾 {output}</div>
+    </div>
+
+    <div style="background: white; padding: 14px 22px;">
+        <div style="font-size: 11px; font-weight: 700; color: #667eea; letter-spacing: 1px; margin-bottom: 10px;">📊 MÉTRICAS</div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <tr style="border-bottom: 1px solid #f0f0f0;">
+                <td style="padding: 7px 4px; color: #666; text-align:start;">🎚️ Frec. de muestreo</td>
+                <td style="padding: 7px 4px; font-weight: 600; color: #333;">{fs} Hz</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f0f0f0;">
+                <td style="padding: 7px 4px; color: #666; text-align:start;">⏱️ Duración</td>
+                <td style="padding: 7px 4px; font-weight: 600; color: #333;">{duration_s} s</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f0f0f0;">
+                <td style="padding: 7px 4px; color: #666; text-align:start;">✂️ Frec. de corte</td>
+                <td style="padding: 7px 4px; font-weight: 600; color: #333;">{cutoff_freq} Hz</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f0f0f0;">
+                <td style="padding: 7px 4px; color: #666; text-align:start;">⚡ Energía original</td>
+                <td style="padding: 7px 4px; font-weight: 600; color: #333;">{original_energy}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #f0f0f0;">
+                <td style="padding: 7px 4px; color: #666; text-align:start;">⚡ Energía filtrada</td>
+                <td style="padding: 7px 4px; font-weight: 600; color: #333;">{filtered_energy}</td>
+            </tr>
+            <tr>
+                <td style="padding: 7px 4px; color: #666; text-align:start;">📉 Reducción de energía</td>
+                <td style="padding: 7px 4px; font-weight: 700; color: {reduction_color};">{reduction}%</td>
+            </tr>
+        </table>
+    </div>
+
+    <div style="
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 9px 22px;
+        text-align: center;
+        font-size: 11px;
+        color: rgba(255,255,255,0.8);
+    ">
+        ✅ Audio procesado exitosamente
+    </div>
+</div>
