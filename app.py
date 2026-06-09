@@ -83,12 +83,69 @@ def procesar_audio():
         output_filename = f"processed/{uuid.uuid4()}.wav"
         wavfile.write(output_filename, fs, data_output)
         
-        # 12. Limpiar archivo original
+        # 12. Generar las gráficas (Audio original, Espectro original, Audio filtrado, Espectro filtrado)
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        
+        fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+        fig.suptitle('Visualizacion del Procesamiento de Audio con Filtro Pasa Bajas (FFT)', fontsize=14, fontweight='bold')
+        
+        # Eje de tiempo
+        t = np.arange(N) / fs
+        
+        # Solo mostrar la mitad positiva de las frecuencias del espectro FFT
+        half_N = N // 2
+        positive_freqs = freqs[:half_N]
+        positive_X = np.abs(X[:half_N])
+        positive_X_filtered = np.abs(X_filtered[:half_N])
+        
+        # 12.1. Audio Original (Tiempo)
+        axs[0, 0].plot(t, data, color='#1f77b4', alpha=0.7)
+        axs[0, 0].set_title('Audio Original (Tiempo)', fontsize=10, fontweight='bold')
+        axs[0, 0].set_xlabel('Tiempo (s)', fontsize=8)
+        axs[0, 0].set_ylabel('Amplitud', fontsize=8)
+        axs[0, 0].grid(True, linestyle='--', alpha=0.6)
+        
+        # 12.2. Espectro FFT Original (Frecuencia)
+        axs[0, 1].plot(positive_freqs, positive_X, color='#ff7f0e', alpha=0.7)
+        axs[0, 1].set_title('Espectro FFT Original (Frecuencia)', fontsize=10, fontweight='bold')
+        axs[0, 1].set_xlabel('Frecuencia (Hz)', fontsize=8)
+        axs[0, 1].set_ylabel('Magnitud (Escala Log)', fontsize=8)
+        axs[0, 1].set_yscale('log')
+        axs[0, 1].grid(True, linestyle='--', alpha=0.6)
+        
+        # 12.3. Audio Filtrado (Tiempo)
+        axs[1, 0].plot(t, data_filtered, color='#2ca02c', alpha=0.7)
+        axs[1, 0].set_title('Audio Filtrado (Tiempo)', fontsize=10, fontweight='bold')
+        axs[1, 0].set_xlabel('Tiempo (s)', fontsize=8)
+        axs[1, 0].set_ylabel('Amplitud', fontsize=8)
+        axs[1, 0].grid(True, linestyle='--', alpha=0.6)
+        
+        # 12.4. Espectro FFT Filtrado (Frecuencia)
+        axs[1, 1].plot(positive_freqs, positive_X_filtered, color='#d62728', alpha=0.7)
+        axs[1, 1].set_title('Espectro FFT Filtrado (Frecuencia)', fontsize=10, fontweight='bold')
+        axs[1, 1].set_xlabel('Frecuencia (Hz)', fontsize=8)
+        axs[1, 1].set_ylabel('Magnitud (Escala Log)', fontsize=8)
+        axs[1, 1].set_yscale('log')
+        axs[1, 1].axvline(x=cutoff_freq, color='black', linestyle='--', alpha=0.8, label=f'Corte: {int(cutoff_freq)} Hz')
+        axs[1, 1].legend(fontsize=8)
+        axs[1, 1].grid(True, linestyle='--', alpha=0.6)
+        
+        plt.tight_layout()
+        
+        # Guardar gráfico
+        plot_filename = f"processed/{uuid.uuid4()}_plot.png"
+        plt.savefig(plot_filename, dpi=150)
+        plt.close()
+        
+        # 13. Limpiar archivo original
         os.remove(input_filename)
         
         return jsonify({
             'success': True,
             'output_file': output_filename,
+            'plot_file': plot_filename,
             'fs': int(fs),
             'duration': round(N/fs, 2),
             'original_energy': float(original_energy),
@@ -102,6 +159,10 @@ def procesar_audio():
 @app.route('/descargar/<filename>')
 def descargar(filename):
     return send_file(f"processed/{filename}", as_attachment=True, download_name="audio_filtrado.wav")
+
+@app.route('/plot/<filename>')
+def serve_plot(filename):
+    return send_file(f"processed/{filename}")
 
 if __name__ == '__main__':
     print("Servidor iniciado en http://localhost:5000")

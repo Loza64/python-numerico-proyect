@@ -253,7 +253,13 @@
       <div class="result" id="result">
         <h3>✅ Audio procesado exitosamente</h3>
         <div class="metrics" id="metrics"></div>
-        <button class="download-btn" id="downloadBtn">⬇️ Descargar Audio Filtrado</button>
+        
+        <!-- Contenedor para la gráfica -->
+        <div class="plot-container" style="margin-top: 20px; text-align: center; background: white; padding: 15px; border-radius: 10px; border: 1px solid #e0e0e0;">
+          <img id="plotImage" src="" alt="Graficas del Procesamiento" style="max-width: 100%; height: auto; border-radius: 5px; display: none;">
+        </div>
+        
+        <button class="download-btn" id="downloadBtn" style="margin-top: 15px;">⬇️ Descargar Audio Filtrado</button>
       </div>
     </div>
   </div>
@@ -274,6 +280,7 @@
     const errorDiv = document.getElementById('error');
     const metrics = document.getElementById('metrics');
     const downloadBtn = document.getElementById('downloadBtn');
+    const plotImage = document.getElementById('plotImage');
 
     let selectedFile = null;
 
@@ -367,6 +374,14 @@
                         • Energía filtrada: ${data.filtered_energy.toFixed(2)}<br>
                         • Reducción de energía: ${((1 - data.filtered_energy / data.original_energy) * 100).toFixed(1)}%
                     `;
+
+          if (data.plot_file) {
+            const plotFilename = data.plot_file.split('/').pop();
+            plotImage.src = `/plot/${plotFilename}`;
+            plotImage.style.display = 'block';
+          } else {
+            plotImage.style.display = 'none';
+          }
 
           result.classList.add('show');
         } else {
