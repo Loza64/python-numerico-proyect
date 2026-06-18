@@ -3,18 +3,30 @@ import scipy.io.wavfile as wavfile
 from scipy.fft import fft, ifft, fftfreq
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import os
 import uuid
+import io
+import cloudinary
+import cloudinary.uploader
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-# Crear carpetas necesarias
-os.makedirs('uploads', exist_ok=True)
-os.makedirs('processed', exist_ok=True)
-
 # Configuración
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB límite
+
+# Configuración de Cloudinary (usa variables de entorno)
+cloudinary.config(
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
+)
 
 @app.route('/')
 def index():
@@ -34,12 +46,11 @@ def procesar_audio():
         # 2. Parámetros del filtro
         cutoff_freq = float(request.form.get('cutoff_freq', 4000))
         
-        # 3. Guardar archivo temporal
-        input_filename = f"uploads/{uuid.uuid4()}.wav"
-        file.save(input_filename)
-        
+        # 3. Leer el archivo directo en memoria (sin disco)
+        input_buffer = io.BytesIO(file.read())
+
         # 4. Cargar y procesar audio
-        fs, data = wavfile.read(input_filename)
+        fs, data = wavfile.read(input_buffer)
         
         # Si es estéreo, tomar un canal
         if len(data.shape) > 1:
@@ -79,15 +90,22 @@ def procesar_audio():
         # 10. Convertir a int16
         data_output = (data_filtered_out * 32767).astype(np.int16)
         
-        # 11. Guardar resultado
-        output_filename = f"processed/{uuid.uuid4()}.wav"
-        wavfile.write(output_filename, fs, data_output)
-        
+        # 11. WAV filtrado → buffer → Cloudinary (sin disco)
+        wav_buffer = io.BytesIO()
+        wavfile.write(wav_buffer, fs, data_output)
+        wav_buffer.seek(0)
+
+        wav_upload = cloudinary.uploader.upload(
+            wav_buffer,
+            resource_type='raw',
+            folder='NUMERICO/audio_filtrado',
+            public_id=str(uuid.uuid4()),
+            format='wav'
+        )
+        wav_url = wav_upload['secure_url']
+        wav_public_id = wav_upload['public_id']
+
         # 12. Generar las gráficas (Audio original, Espectro original, Audio filtrado, Espectro filtrado)
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        
         fig, axs = plt.subplots(2, 2, figsize=(12, 8))
         fig.suptitle('Visualizacion del Procesamiento de Audio con Filtro Pasa Bajas (FFT)', fontsize=14, fontweight='bold')
         
@@ -134,18 +152,25 @@ def procesar_audio():
         
         plt.tight_layout()
         
-        # Guardar gráfico
-        plot_filename = f"processed/{uuid.uuid4()}_plot.png"
-        plt.savefig(plot_filename, dpi=150)
+        # 12.5. Gráfico → buffer → Cloudinary (sin disco)
+        plot_buffer = io.BytesIO()
+        plt.savefig(plot_buffer, format='png', dpi=150)
         plt.close()
-        
-        # 13. Limpiar archivo original
-        os.remove(input_filename)
-        
+        plot_buffer.seek(0)
+
+        plot_upload = cloudinary.uploader.upload(
+            plot_buffer,
+            resource_type='image',
+            folder='NUMERICO/audio_plots',
+            public_id=str(uuid.uuid4())
+        )
+        plot_url = plot_upload['secure_url']
+
         return jsonify({
             'success': True,
-            'output_file': output_filename,
-            'plot_file': plot_filename,
+            'wav_url': wav_url,
+            'wav_public_id': wav_public_id,
+            'plot_url': plot_url,
             'fs': int(fs),
             'duration': round(N/fs, 2),
             'original_energy': float(original_energy),
@@ -155,14 +180,6 @@ def procesar_audio():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-@app.route('/descargar/<filename>')
-def descargar(filename):
-    return send_file(f"processed/{filename}", as_attachment=True, download_name="audio_filtrado.wav")
-
-@app.route('/plot/<filename>')
-def serve_plot(filename):
-    return send_file(f"processed/{filename}")
 
 if __name__ == '__main__':
     print("Servidor iniciado en http://localhost:5000")

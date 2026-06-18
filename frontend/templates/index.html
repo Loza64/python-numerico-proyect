@@ -363,7 +363,7 @@
         const data = await response.json();
 
         if (data.success) {
-          currentOutputFile = data.output_file.split('/').pop();
+          currentOutputFile = data.wav_url;
 
           metrics.innerHTML = `
                         <strong>📊 Métricas del procesamiento:</strong><br>
@@ -375,9 +375,9 @@
                         • Reducción de energía: ${((1 - data.filtered_energy / data.original_energy) * 100).toFixed(1)}%
                     `;
 
-          if (data.plot_file) {
-            const plotFilename = data.plot_file.split('/').pop();
-            plotImage.src = `/plot/${plotFilename}`;
+          if (data.plot_url) {
+            
+            plotImage.src = data.plot_url;
             plotImage.style.display = 'block';
           } else {
             plotImage.style.display = 'none';
@@ -397,7 +397,7 @@
 
     function descargarAudio() {
       if (currentOutputFile) {
-        window.location.href = `/descargar/${currentOutputFile}`;
+        window.location.href = currentOutputFile;
       }
     }
 
