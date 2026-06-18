@@ -1,5 +1,5 @@
 services:
-  web-numerico-fft:
+  frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
