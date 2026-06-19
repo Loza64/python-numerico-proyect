@@ -2,8 +2,7 @@ app = "python-numerico-proyect"
 primary_region = "ams"
 
 [build]
-  dockerfile = "frontend/Dockerfile"
-  context = "frontend"
+  dockerfile = "Dockerfile"
 
 [[services]]
   internal_port = 5000
