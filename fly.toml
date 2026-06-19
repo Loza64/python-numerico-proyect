@@ -1,0 +1,18 @@
+app = "python-numerico-proyect"
+primary_region = "ams"
+
+[build]
+  dockerfile = "frontend/Dockerfile"
+  context = "frontend"
+
+[[services]]
+  internal_port = 5000
+  protocol = "tcp"
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
