@@ -323,15 +323,18 @@
     function handleFile(file) {
       if (!file.name.endsWith('.wav')) {
         showError('Solo se permiten archivos .wav');
+        fileInput.value = '';
         return;
       }
 
       if (file.size > 50 * 1024 * 1024) {
         showError('El archivo no debe superar los 50MB');
+        fileInput.value = '';
         return;
       }
 
       selectedFile = file;
+      fileInput.value = '';
       fileName.textContent = file.name;
       fileSize.textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
       fileInfo.classList.add('show');
@@ -397,7 +400,12 @@
 
     function descargarAudio() {
       if (currentOutputFile) {
-        window.location.href = currentOutputFile;
+        const a = document.createElement('a');
+        a.href = currentOutputFile;
+        a.download = '';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       }
     }
 
