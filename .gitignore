@@ -1,6 +1,7 @@
 /processed/*
 /yupiter/.ipynb_checkpoints
 /uploads/*
+/yupiter/uploads/*
 venv/
 /venv/
 *.env
