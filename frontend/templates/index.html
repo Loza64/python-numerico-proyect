@@ -221,7 +221,7 @@
       <div class="upload-area" id="uploadArea">
         <div class="upload-icon">📁</div>
         <p>Haz clic o arrastra un archivo WAV</p>
-        <small>Formatos soportados: .wav (máx 50MB)</small>
+        <small>Formatos soportados: .wav (máx 10MB)</small>
         <input type="file" id="fileInput" accept=".wav" style="display: none;">
       </div>
 
@@ -327,8 +327,8 @@
         return;
       }
 
-      if (file.size > 50 * 1024 * 1024) {
-        showError('El archivo no debe superar los 50MB');
+      if (file.size > 10 * 1024 * 1024) {
+        showError('El archivo no debe superar los 10MB');
         fileInput.value = '';
         return;
       }
